@@ -46,24 +46,14 @@ namespace _2D_Physics_Simulation_V2
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
 
-            int VertexArrayObject = GL.GenVertexArray();
-            GL.BindVertexArray(VertexArrayObject);
-
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
-
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
-
             shader = new Shader("shader.vert", "shader.frag");
-            shader.Use();
-            // 3. now draw the object
-            //someOpenGLFunctionThatDrawsOurTriangle();
 
             VertexArrayObject = GL.GenVertexArray();
+            GL.BindVertexArray(VertexArrayObject);
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(0);
+
+            shader.Use();
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -72,7 +62,9 @@ namespace _2D_Physics_Simulation_V2
 
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
-            //Code goes here.
+            shader.Use();
+            GL.BindVertexArray(VertexArrayObject);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
             SwapBuffers();
         }
@@ -91,6 +83,8 @@ namespace _2D_Physics_Simulation_V2
             GL.DeleteBuffer(VertexBufferObject);
             shader.Dispose();
         }
+
+
     }
 
 }
