@@ -12,6 +12,8 @@ namespace _2D_Physics_Simulation_V2
 {
     public class GraphicsWindow : GameWindow
     {
+        Shader shader;
+
         float[] vertices = {
             -0.5f, -0.5f, 0.0f, //Bottom-left vertex
             0.5f, -0.5f, 0.0f, //Bottom-right vertex
@@ -19,6 +21,8 @@ namespace _2D_Physics_Simulation_V2
             };
 
         int VertexBufferObject;
+
+        int VertexArrayObject;
 
         public GraphicsWindow(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title }) { }
 
@@ -41,7 +45,25 @@ namespace _2D_Physics_Simulation_V2
             VertexBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
-            //Code goes here
+
+            int VertexArrayObject = GL.GenVertexArray();
+            GL.BindVertexArray(VertexArrayObject);
+
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(0);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(0);
+
+            shader = new Shader("shader.vert", "shader.frag");
+            shader.Use();
+            // 3. now draw the object
+            //someOpenGLFunctionThatDrawsOurTriangle();
+
+            VertexArrayObject = GL.GenVertexArray();
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -60,6 +82,14 @@ namespace _2D_Physics_Simulation_V2
             base.OnFramebufferResize(e);
 
             GL.Viewport(0, 0, e.Width, e.Height);
+        }
+        
+        protected override void OnUnload()
+        {
+            base.OnUnload();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            GL.DeleteBuffer(VertexBufferObject);
+            shader.Dispose();
         }
     }
 
