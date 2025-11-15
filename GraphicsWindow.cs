@@ -16,6 +16,10 @@ namespace _2D_Physics_Simulation_V2
         private ShapeRenderer renderer;
         private List<Shape> shapes = new();
 
+        private readonly object _shapeLock = new object();
+        private readonly List<float[]> _shapeQueue = new List<float[]>();
+        private readonly List<Shape> _shapes = new List<Shape>();
+
         public GraphicsWindow(int width, int height, string title)
             : base(GameWindowSettings.Default, new NativeWindowSettings()
             {
@@ -25,6 +29,14 @@ namespace _2D_Physics_Simulation_V2
         {
         }
 
+        public void AddShape(float[] vertices)
+        {
+            lock (_shapeLock)
+            {
+                _shapeQueue.Add(vertices);
+            }
+        }
+
         protected override void OnLoad()
         {
             base.OnLoad();
@@ -32,18 +44,6 @@ namespace _2D_Physics_Simulation_V2
 
             shader = new Shader("shader.vert", "shader.frag");
             renderer = new ShapeRenderer(shader);
-
-            // Example shape: Rectangle
-            AddShape(
-                new float[]
-                {
-                    0.5f,  0.5f, 0f,
-                    0.5f, -0.5f, 0f,
-                   -0.5f, -0.5f, 0f,
-                   -0.5f,  0.5f, 0f
-                },
-                new uint[] { 0, 1, 3, 1, 2, 3 }
-            );
         }
 
         public Shape AddShape(float[] vertices, uint[]? indices = null)
@@ -64,10 +64,21 @@ namespace _2D_Physics_Simulation_V2
         {
             base.OnRenderFrame(e);
 
-            GL.Clear(ClearBufferMask.ColorBufferBit);
+            // Process queued shapes safely on the GL thread
+            lock (_shapeLock)
+            {
+                foreach (var verts in _shapeQueue)
+                {
+                    _shapes.Add(new Shape(verts)); // <- creates VAO/VBO here on GL thread
+                }
+                _shapeQueue.Clear();
+            }
 
-            foreach (var s in shapes)
-                renderer.DrawShape(s);
+            // now draw everything
+            foreach (var shape in _shapes)
+            {
+                renderer.DrawShape(shape);
+            }
 
             SwapBuffers();
         }

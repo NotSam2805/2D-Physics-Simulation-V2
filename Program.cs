@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace _2D_Physics_Simulation_V2
 {
@@ -18,16 +19,17 @@ namespace _2D_Physics_Simulation_V2
             using (var window = new GraphicsWindow(800, 600, "LearnOpenTK"))
             {
                 window.Run();
-                // Example: a triangle
-                float[] triangleVerts =
+
+                // Define a triangle (3 vertices)
+                float[] triangle =
                 {
-                    0.0f, 0.5f, 0f,
-                    -0.5f, -0.5f, 0f,
-                    0.5f, -0.5f, 0f
+                    0.0f, 0.5f, 0.0f,     // top
+                    -0.5f, -0.5f, 0.0f,   // bottom left
+                    0.5f, -0.5f, 0.0f     // bottom right
                 };
 
-                window.AddShape(triangleVerts);
-
+                // Add the triangle to be drawn
+                window.AddShape(triangle);
             }
         }
     }
