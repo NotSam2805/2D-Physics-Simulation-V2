@@ -18,6 +18,16 @@ namespace _2D_Physics_Simulation_V2
             using (var window = new GraphicsWindow(800, 600, "LearnOpenTK"))
             {
                 window.Run();
+                // Example: a triangle
+                float[] triangleVerts =
+                {
+                    0.0f, 0.5f, 0f,
+                    -0.5f, -0.5f, 0f,
+                    0.5f, -0.5f, 0f
+                };
+
+                window.AddShape(triangleVerts);
+
             }
         }
     }

@@ -12,48 +12,52 @@ namespace _2D_Physics_Simulation_V2
 {
     public class GraphicsWindow : GameWindow
     {
-        Shader shader;
+        private Shader shader;
+        private ShapeRenderer renderer;
+        private List<Shape> shapes = new();
 
-        float[] vertices = {
-            -0.5f, -0.5f, 0.0f, //Bottom-left vertex
-            0.5f, -0.5f, 0.0f, //Bottom-right vertex
-            0.0f,  0.5f, 0.0f  //Top vertex
-            };
-
-        int VertexBufferObject;
-
-        int VertexArrayObject;
-
-        public GraphicsWindow(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title }) { }
-
-        protected override void OnUpdateFrame(FrameEventArgs e)
-        {
-            base.OnUpdateFrame(e);
-
-            if (KeyboardState.IsKeyDown(Keys.Escape))
+        public GraphicsWindow(int width, int height, string title)
+            : base(GameWindowSettings.Default, new NativeWindowSettings()
             {
-                Close();
-            }
+                Size = new OpenTK.Mathematics.Vector2i(width, height),
+                Title = title
+            })
+        {
         }
 
         protected override void OnLoad()
         {
             base.OnLoad();
-
-            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-
-            VertexBufferObject = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+            GL.ClearColor(0.1f, 0.1f, 0.1f, 1f);
 
             shader = new Shader("shader.vert", "shader.frag");
+            renderer = new ShapeRenderer(shader);
 
-            VertexArrayObject = GL.GenVertexArray();
-            GL.BindVertexArray(VertexArrayObject);
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
+            // Example shape: Rectangle
+            AddShape(
+                new float[]
+                {
+                    0.5f,  0.5f, 0f,
+                    0.5f, -0.5f, 0f,
+                   -0.5f, -0.5f, 0f,
+                   -0.5f,  0.5f, 0f
+                },
+                new uint[] { 0, 1, 3, 1, 2, 3 }
+            );
+        }
 
-            shader.Use();
+        public Shape AddShape(float[] vertices, uint[]? indices = null)
+        {
+            var shape = new Shape(vertices, indices);
+            shapes.Add(shape);
+            renderer.InitializeShape(shape);
+            return shape;
+        }
+
+        public void UpdateShapeVertices(Shape shape, float[] newVerts)
+        {
+            shape.Vertices = newVerts;
+            renderer.UpdateShapeVertices(shape);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -62,9 +66,8 @@ namespace _2D_Physics_Simulation_V2
 
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
-            shader.Use();
-            GL.BindVertexArray(VertexArrayObject);
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+            foreach (var s in shapes)
+                renderer.DrawShape(s);
 
             SwapBuffers();
         }
@@ -72,19 +75,8 @@ namespace _2D_Physics_Simulation_V2
         protected override void OnFramebufferResize(FramebufferResizeEventArgs e)
         {
             base.OnFramebufferResize(e);
-
             GL.Viewport(0, 0, e.Width, e.Height);
         }
-        
-        protected override void OnUnload()
-        {
-            base.OnUnload();
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-            GL.DeleteBuffer(VertexBufferObject);
-            shader.Dispose();
-        }
-
-
     }
 
 }

@@ -11,60 +11,33 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace _2D_Physics_Simulation_V2
 {
-    public class Shader
+    public class Shader : IDisposable
     {
-        int Handle;
+        public int Handle;
 
         public Shader(string vertexPath, string fragmentPath)
         {
-            int VertexShader, FragmentShader;
+            string vertexCode = File.ReadAllText(vertexPath);
+            string fragmentCode = File.ReadAllText(fragmentPath);
 
-            string VertexShaderSource = File.ReadAllText(vertexPath);
+            int vertexShader = GL.CreateShader(ShaderType.VertexShader);
+            GL.ShaderSource(vertexShader, vertexCode);
+            GL.CompileShader(vertexShader);
+            CheckCompileErrors(vertexShader, "VERTEX");
 
-            string FragmentShaderSource = File.ReadAllText(fragmentPath);
-
-            VertexShader = GL.CreateShader(ShaderType.VertexShader);
-            GL.ShaderSource(VertexShader, VertexShaderSource);
-
-            FragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(FragmentShader, FragmentShaderSource);
-
-            GL.CompileShader(VertexShader);
-
-            GL.GetShader(VertexShader, ShaderParameter.CompileStatus, out int success);
-            if (success == 0)
-            {
-                string infoLog = GL.GetShaderInfoLog(VertexShader);
-                Console.WriteLine(infoLog);
-            }
-
-            GL.CompileShader(FragmentShader);
-
-            GL.GetShader(FragmentShader, ShaderParameter.CompileStatus, out success);
-            if (success == 0)
-            {
-                string infoLog = GL.GetShaderInfoLog(FragmentShader);
-                Console.WriteLine(infoLog);
-            }
+            int fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
+            GL.ShaderSource(fragmentShader, fragmentCode);
+            GL.CompileShader(fragmentShader);
+            CheckCompileErrors(fragmentShader, "FRAGMENT");
 
             Handle = GL.CreateProgram();
-
-            GL.AttachShader(Handle, VertexShader);
-            GL.AttachShader(Handle, FragmentShader);
-
+            GL.AttachShader(Handle, vertexShader);
+            GL.AttachShader(Handle, fragmentShader);
             GL.LinkProgram(Handle);
+            CheckLinkErrors(Handle);
 
-            GL.GetProgram(Handle, GetProgramParameterName.LinkStatus, out success);
-            if (success == 0)
-            {
-                string infoLog = GL.GetProgramInfoLog(Handle);
-                Console.WriteLine(infoLog);
-            }
-
-            GL.DetachShader(Handle, VertexShader);
-            GL.DetachShader(Handle, FragmentShader);
-            GL.DeleteShader(FragmentShader);
-            GL.DeleteShader(VertexShader);
+            GL.DeleteShader(vertexShader);
+            GL.DeleteShader(fragmentShader);
         }
 
         public void Use()
@@ -72,31 +45,31 @@ namespace _2D_Physics_Simulation_V2
             GL.UseProgram(Handle);
         }
 
-        private bool disposedValue = false;
-
-        protected virtual void Dispose(bool disposing)
+        private void CheckCompileErrors(int shader, string type)
         {
-            if (!disposedValue)
-            {
-                GL.DeleteProgram(Handle);
+            GL.GetShader(shader, ShaderParameter.CompileStatus, out int success);
 
-                disposedValue = true;
+            if (success == 0)
+            {
+                string log = GL.GetShaderInfoLog(shader);
+                throw new Exception($"Shader compile error ({type}):\n{log}");
             }
         }
 
-        ~Shader()
+        private void CheckLinkErrors(int program)
         {
-            if (disposedValue == false)
+            GL.GetProgram(program, GetProgramParameterName.LinkStatus, out int success);
+
+            if (success == 0)
             {
-                Console.WriteLine("GPU Resource leak! Did you forget to call Dispose()?");
+                string log = GL.GetProgramInfoLog(program);
+                throw new Exception($"Shader link error:\n{log}");
             }
         }
-
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            GL.DeleteProgram(Handle);
         }
     }
 }
